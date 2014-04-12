@@ -74,6 +74,7 @@ public:
 	const CString& GetDocRoot() const;
 	const CString& GetUser() const;
 	const CString& GetPass() const;
+	const CString& GetRemoteXIP() const;
 	const CString& GetParamString() const;
 	const CString& GetContentType() const;
 	const CString& GetURIPrefix() const;
@@ -123,6 +124,7 @@ protected:
 	MCString                 m_msRequestCookies;
 	MCString                 m_msResponseCookies;
 	CString                  m_sURIPrefix;
+	CString                  m_sRemoteXIp;
 };
 
 #endif // !_HTTPSOCK_H

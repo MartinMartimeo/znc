@@ -307,6 +307,13 @@ CString CWebSock::FindTmpl(CModule* pModule, const CString& sName) {
 	return sName;
 }
 
+CString CWebSock::GetEffectiveIP() {
+	if (GetRemoteIP().Equals("127.0.0.1") && GetLocalIP().Equals("127.0.0.1") && !GetRemoteXIP().empty()) {
+		return GetRemoteXIP();
+	}	
+	return GetRemoteIP();
+}	
+
 void CWebSock::SetPaths(CModule* pModule, bool bIsTemplate) {
 	m_Template.ClearPaths();
 
@@ -320,7 +327,6 @@ void CWebSock::SetPaths(CModule* pModule, bool bIsTemplate) {
 
 void CWebSock::SetVars() {
 	m_Template["SessionUser"] = GetUser();
-	m_Template["SessionIP"] = GetRemoteIP();
 	m_Template["Tag"] = CZNC::GetTag(GetSession()->GetUser() != NULL, true);
 	m_Template["Version"] = CZNC::GetVersion();
 	m_Template["SkinName"] = GetSkinName();
@@ -580,7 +586,7 @@ CWebSock::EPageReqResult CWebSock::OnPageRequestInternal(const CString& sURI, CS
 	//
 	// When their IP is wrong, we give them an invalid cookie. This makes
 	// sure that they will get a new cookie on their next request.
-	if (CZNC::Get().GetProtectWebSessions() && GetSession()->GetIP() != GetRemoteIP()) {
+	if (CZNC::Get().GetProtectWebSessions() && GetSession()->GetIP() != GetEffectiveIP()) {
 		DEBUG("Expected IP: " << GetSession()->GetIP());
 		DEBUG("Remote IP:   " << GetRemoteIP());
 		SendCookie("SessionId", "WRONG_IP_FOR_SESSION");
@@ -836,9 +842,9 @@ CSmartPtr<CWebSession> CWebSock::GetSession() {
 		return *pSession;
 	}
 
-	if (Sessions.m_mIPSessions.count(GetRemoteIP()) > m_uiMaxSessions) {
+	if (Sessions.m_mIPSessions.count(GetEffectiveIP()) > m_uiMaxSessions) {
 		pair<mIPSessionsIterator, mIPSessionsIterator> p =
-			Sessions.m_mIPSessions.equal_range(GetRemoteIP());
+			Sessions.m_mIPSessions.equal_range(GetEffectiveIP());
 		mIPSessionsIterator it = std::min_element(p.first, p.second, compareLastActive);
 		DEBUG("Remote IP:   " << GetRemoteIP() << "; discarding session [" << it->second->GetId() << "]");
 		Sessions.m_mspSessions.RemItem(it->second->GetId());
@@ -847,7 +853,7 @@ CSmartPtr<CWebSession> CWebSock::GetSession() {
 	CString sSessionID;
 	do {
 		sSessionID = CString::RandomString(32);
-		sSessionID += ":" + GetRemoteIP() + ":" + CString(GetRemotePort());
+		sSessionID += ":" + GetEffectiveIP() + ":" + CString(GetRemotePort());
 		sSessionID += ":" + GetLocalIP()  + ":" + CString(GetLocalPort());
 		sSessionID += ":" + CString(time(NULL));
 		sSessionID = sSessionID.SHA256();
@@ -855,7 +861,7 @@ CSmartPtr<CWebSession> CWebSock::GetSession() {
 		DEBUG("Auto generated session: [" + sSessionID + "]");
 	} while (Sessions.m_mspSessions.HasItem(sSessionID));
 
-	CSmartPtr<CWebSession> spSession(new CWebSession(sSessionID, GetRemoteIP()));
+	CSmartPtr<CWebSession> spSession(new CWebSession(sSessionID, GetEffectiveIP()));
 	Sessions.m_mspSessions.AddItem(spSession->GetId(), spSession);
 
 	m_spSession = spSession;

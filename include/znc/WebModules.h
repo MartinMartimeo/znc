@@ -138,6 +138,8 @@ public:
 	CModule* GetModule() const { return (CModule*) m_pModule; }
 	void GetAvailSkins(VCString& vRet) const;
 	CString GetSkinName();
+	
+	CString GetEffectiveIP();
 
 	CString GetRequestCookie(const CString& sKey);
 	bool SendCookie(const CString& sKey, const CString& sValue);

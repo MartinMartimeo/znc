@@ -218,7 +218,8 @@ public:
 
 	bool Reconnect(const bool canUseExisting) {
 
-	    if (canUseExisting && mysql_ping(&mysql)) {
+	    if (canUseExisting && !mysql_ping(&mysql)) {
+	        DEBUG("Use existing database connection");
 	        return true;
 	    }
 
@@ -237,6 +238,9 @@ public:
             mysql_close(&mysql);
             return false;
         }
+
+        my_bool recon = true;
+        mysql_options(&mysql, MYSQL_OPT_RECONNECT, &recon);
 
 	    return true;
 	}

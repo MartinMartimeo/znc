@@ -127,6 +127,9 @@ public:
         params[1].is_unsigned     = true;
         params[1].length          = &uPassword;
 
+        // Bind
+        mysql_stmt_bind_param(stmt, &params[0]);
+
         // Prepare result parameter
         MYSQL_BIND result;
         memset(&result, 0, sizeof(result));
@@ -137,9 +140,6 @@ public:
         result.is_null         = &is_null;
         result.length          = 0;
         mysql_stmt_bind_result(stmt, &result);
-
-        // Bind
-        mysql_stmt_bind_param(stmt, &params[0]);
 
         // Execute
         if (mysql_stmt_execute(stmt) == 0)

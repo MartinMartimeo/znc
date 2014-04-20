@@ -188,9 +188,11 @@ public:
         // Execute
         if (mysql_stmt_execute(stmt) == 0)
         {
-            mysql_stmt_fetch(stmt);
-
-            sData = CString((char *) aBuffer, iBufferSize);
+            if (mysql_stmt_fetch(stmt) == 0) {
+                sData = CString((char *) aBuffer, iBufferSize);
+            } else {
+                sData = "";
+            }
         } else {
             CString err	= mysql_error(&mysql);
             DEBUG("Database statement execution failed: " + err);
@@ -206,21 +208,21 @@ public:
 
             // [?:..] transformation
             CString::size_type iStartPos = sData.find_first_of("[?:");
-            while (iStartPos != sData.npos) {
+            while (iStartPos != sData.npos && iStartPos > 0) {
                 CString::size_type iEndPos = sData.find_first_of("]", iStartPos);
-
-                CString sRandomize = sData.substr(iStartPos, iEndPos-iStartPos);
+                CString sRandomize = sData.substr(iStartPos + 3, iEndPos - iStartPos - 3);
 
                 CString::size_type p = (CString::size_type) (count(sRandomize.begin(), sRandomize.end(), '|') * (rand() / (RAND_MAX + 1.0)));
+
                 CString sRandom = sRandomize.Token(p, false, "|");
 
-                sData.erase(iStartPos, iEndPos);
+                sData.erase(iStartPos, iEndPos - iStartPos + 1);
                 sData.insert(iStartPos, sRandom);
 
                 iStartPos = sData.find_first_of("[?:");
             }
 
-            PutIRC("PRIVMSG " + Channel.GetName() + " :" + sData);
+            PutIRC("PRIVMSG " + Channel.GetName() + " :\001ACTION " + sData + "\001");
         } else {
             DEBUG("Data is empty");
         }
